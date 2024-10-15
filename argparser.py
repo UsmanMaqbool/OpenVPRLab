@@ -45,6 +45,9 @@ def parse_args() -> Dict[str, Any]:
     parser.add_argument('--lr_mult', type=float, help='Learning rate multiplier for scheduler')
     parser.add_argument('--max_epochs', type=int, help='Maximum number of epochs')
 
+    # Test arguments
+    parser.add_argument('--load_state_dict', type=str, help='Path to the model state_dict file')
+
     args = parser.parse_args()
 
     # If a config file is provided, load it
@@ -110,6 +113,9 @@ def update_config_with_args_and_defaults(config: Dict[str, Any], args: argparse.
             'lr_mult': 0.1,
             'max_epochs': 40,
         },
+        'test': {
+            'load_state_dict': None,
+        }
     }
 
     # Helper function to update nested dictionaries
@@ -166,6 +172,10 @@ def update_config_with_args_and_defaults(config: Dict[str, Any], args: argparse.
         config['trainer']['lr_mult'] = arg_dict['lr_mult']
     if arg_dict['max_epochs'] is not None:
         config['trainer']['max_epochs'] = arg_dict['max_epochs']
+    
+    # Update test config
+    if arg_dict['load_state_dict'] is not None:
+        config['test']['load_state_dict'] = arg_dict['load_state_dict']
 
     # Update other general config
     if arg_dict['seed'] is not None:

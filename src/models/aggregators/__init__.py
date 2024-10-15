@@ -5,3 +5,4 @@ from .avg import AVGPool
 from .gem import GeMPool
 from .cosplace import CosPlace
 from .salad import SALAD
+from .netvlad import NetVLAD

@@ -39,6 +39,9 @@ git clone https://github.com/amaralibey/OpenVPRLab.git
 # Navigate to the project directory
 cd OpenVPRLab
 
+# Hipergator 
+module load conda/24.3.0
+
 # Create environment and install the required dependencies
 conda env create -f environment.yml
 

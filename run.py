@@ -16,7 +16,8 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from src.core.vpr_datamodule import VPRDataModule
 from src.core.vpr_framework import VPRFramework
 from src.losses.vpr_losses import VPRLossFunction
-
+import h5py
+import os
 from rich.traceback import install
 install() # this is for better traceback formatting
 
@@ -99,6 +100,12 @@ def train(config):
             config['aggregator']['params']['in_channels'] = out_channels
     
     aggregator = get_instance(config['aggregator']['module'], config['aggregator']['class'], config['aggregator']['params'])
+    
+    if config['aggregator']['class'] in ["NetVLAD"]:  # If using NetVLAD layer, initialize it
+        ## Initialize NetVLAD layer
+        aggregator.initialize_netvlad_layer(config, datamodule, backbone)
+    
+            
     loss_function = get_instance(config['loss_function']['module'], config['loss_function']['class'], config['loss_function']['params'])
 
     vpr_model = VPRFramework(

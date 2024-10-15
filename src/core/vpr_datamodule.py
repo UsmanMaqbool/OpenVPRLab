@@ -8,7 +8,7 @@
 
 import torch
 import lightning as L
-from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import transforms as T
 from torchvision.transforms import v2  as T2
 
@@ -17,6 +17,10 @@ from src.dataloaders.train.gsv_cities import GSVCitiesDataset
 from src.utils import config_manager
 from src.dataloaders.valid.mapillary_sls import MapillarySLSDataset
 from src.dataloaders.valid.pittsburgh import PittsburghDataset
+
+import numpy as np
+import math
+
 
 class VPRDataModule(L.LightningDataModule):
     """
@@ -133,6 +137,41 @@ class VPRDataModule(L.LightningDataModule):
             pin_memory=True,
             shuffle=self.shuffle_all,
         )
+        
+    def train_cluster(self):
+        # the reason we are using `_get_train_dataset` here is because
+        # sometimes we want to shuffle the data (in-city only) at each epoch
+        # which can only be done when loading the dataset's dataframes
+        self.train_dataset = self._get_train_dataset()
+        
+        if self.batch_sampler is not None:
+            return DataLoader(
+                dataset=self.train_dataset,
+                num_workers=self.num_workers,
+                batch_sampler=self.batch_sampler,
+                pin_memory=True,
+            )
+        
+        # Create a SubsetRandomSampler
+        descriptors_num = 50000
+        descs_num_per_image = 100
+        images_num = math.ceil(descriptors_num / descs_num_per_image)
+        
+        random_sampler = SubsetRandomSampler(np.random.choice(len(self.train_dataset), images_num, replace=False))
+        
+        # indices = list(range(len(self.train_dataset)))
+        # subset_sampler = SubsetRandomSampler(indices)
+        
+        return DataLoader(
+            dataset=self.train_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            drop_last=False,
+            pin_memory=True,
+            sampler=random_sampler,
+        )
+    
+        
 
     def val_dataloader(self):
         val_dataloaders = []
