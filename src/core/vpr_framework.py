@@ -14,12 +14,14 @@ from torchvision import transforms as T
 from torchvision.transforms import v2 as T2
 import src.utils as utils
 import yaml
+import src.models.aggregators.graphvlad as graphvlad
 
 class VPRFramework(L.LightningModule):
     def __init__(
         self,
         backbone,
         aggregator,
+        segmentation,
         loss_function,
         lr=1e-4,
         optimizer="adamw",
@@ -48,6 +50,7 @@ class VPRFramework(L.LightningModule):
         super().__init__()
         self.backbone = backbone
         self.aggregator = aggregator
+        self.segmentation = segmentation
         self.loss_function = loss_function
         self.lr = lr
         self.optimizer = optimizer
@@ -56,6 +59,12 @@ class VPRFramework(L.LightningModule):
         self.milestones = milestones
         self.lr_mult = lr_mult
         self.verbose = verbose
+        if 'graphvlad' in config_dict['aggregator']:
+            self.gvlad = True
+            self.GraphVLAD = graphvlad.GraphVLAD(self.backbone, self.aggregator, self.segmentation, NB=5)
+        else:
+            self.gvlad : False
+        
         
         # save the hyperparameters except the classes
         # self.save_hyperparameters(ignore=["loss_function", "backbone", "aggregator", "verbose"])
@@ -71,8 +80,14 @@ class VPRFramework(L.LightningModule):
         Returns:
             Tensor (or list of tensors) after passing through the backbone and aggregator.
         """
-        x = self.backbone(x)
-        x = self.aggregator(x)
+        # x = self.backbone(x)
+        # x = self.aggregator(x)
+
+        # if not self.gvlad:
+        #     x = self.backbone(x)
+        #     x = self.aggregator(x)
+        # else:
+        x = self.GraphVLAD(x)
         return x
     
     def configure_optimizers(self):

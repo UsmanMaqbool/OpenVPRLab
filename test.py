@@ -99,11 +99,18 @@ if __name__ == "__main__":
     # Create aggregator
     aggregator = get_instance(config['aggregator']['module'], config['aggregator']['class'], config['aggregator']['params'])
 
+    if 'graphvlad' in config['aggregator']:
+        segmentation = get_instance(config['segmentation']['module'], config['segmentation']['class'], config['segmentation']['params'])
+    else:
+        segmentation = None
+        
     loss_function = get_instance(config['loss_function']['module'], config['loss_function']['class'], config['loss_function']['params'])
+
 
     # Load model
     vpr_model = VPRFramework(
         backbone=backbone,        
+        segmentation=segmentation,
         loss_function=loss_function,
         aggregator=aggregator,
         config_dict=config, # pass the config to the framework in order to save it

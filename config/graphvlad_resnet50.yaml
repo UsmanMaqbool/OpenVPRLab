@@ -9,15 +9,12 @@
 # Datamodule Configuration
 #---------------------------------------------------
 datamodule:
-  train_set_name: "gsv-cities" # use "gsv-cities" if you have downloaded the full dataset
+  train_set_name: "gsv-cities-light" # use "gsv-cities" if you have downloaded the full dataset
   train_image_size: 
     - 320
     - 320
-  val_image_size: 
-    - 384
-    - 384
   img_per_place: 4
-  batch_size: 50
+  batch_size: 10
   num_workers: 8
   val_set_names:
     - "msls-val"
@@ -26,17 +23,24 @@ datamodule:
 #---------------------------------------------------
 # VPR Model Configuration
 #---------------------------------------------------
+segmentation:
+  module: src.models.backbones
+  class: FastSCNN    # class name in the __init__.py file in the aggregators directory
+  fastscnn: "/home/m.maqboolbhutta/usman_ws/datasets/official/fast_scnn/fast_scnn_citys.pth"
+  params:
+    num_classes: 19
+  
+
 backbone:
   module: src.models.backbones
   class: ResNet
   params:
-    backbone_name: "resnet18"  # name of the resnet backbone (see ResNet.AVAILABLE_MODELS)
+    backbone_name: "resnet50"  # name of the resnet backbone (see ResNet.AVAILABLE_MODELS)
     pretrained: true
-    num_unfrozen_blocks: 2
+    num_unfrozen_blocks: 1
     crop_last_block: true
   
   # Example of DinoV2
-  # name: dinov2
   # module: src.models.backbones
   # class: DinoV2
   # params:
@@ -45,13 +49,25 @@ backbone:
 
 aggregator:
   module: src.models.aggregators # module path
-  class: BoQ    # class name in the __init__.py file in the aggregators directory
+  class: NetVLAD    # class name in the __init__.py file in the aggregators directory
+  graphvlad: True
   params:
-    in_channels:  # if left blank we will use backbone.out_channels.
-    proj_channels: 256
-    num_queries: 32
-    num_layers: 2
-    row_dim: 16
+    clusters_num: 16
+    alpha: 100.0
+    dim: 1024
+  
+
+  # Example of MixVPR
+  # module: src.models.aggregators
+  # class: MixVPR   # class name
+  # params:
+  #   in_channels: 1024   # we will derive this from the backbone.
+  #   in_h: 20            # input height (this depends on the input image size and the backbone)
+  #   in_w: 20
+  #   out_channels: 512
+  #   mix_depth: 4
+  #   mlp_ratio: 1
+  #   out_rows: 4
 
 #---------------------------------------------------
 # Loss Function Configuration
@@ -63,8 +79,8 @@ loss_function:
   module: src.losses
   class: VPRLossFunction
   params:
-    loss_fn_name: "MultiSimilarityLoss"   # other possible values: "SupConLoss", "ContrastiveLoss", "TripletMarginLoss"
-    miner_name: "MultiSimilarityMiner"    # other possible values: "TripletMarginMiner", "PairMarginMiner"
+    loss_fn_name: "MultiSimilarityLoss"   # other possible values: "MultiSimilarityLoss", "SupConLoss", "ContrastiveLoss", "TripletMarginLoss"
+    miner_name: "MultiSimilarityMiner"    # other possible values: "MultiSimilarityMiner", "TripletMarginMiner", "PairMarginMiner"
 
 
 #---------------------------------------------------
@@ -72,13 +88,12 @@ loss_function:
 #---------------------------------------------------
 trainer:
   optimizer: adamw
-  lr: 0.0004      # learning rate
+  lr: 0.0002      # learning rate
   wd: 0.001       # weight decay
   warmup: 1500    # linear warmup steps
   max_epochs: 40
   milestones:
-    - 5
     - 10
     - 20
     - 30
-  lr_mult: 0.25 # learning rate multiplier at each milestone
+  lr_mult: 0.1 # learning rate multiplier at each milestone

@@ -21,7 +21,7 @@
 #SBATCH --distribution=cyclic:cyclic
 
 ## To RUN
-# sbatch --j 1014-s1-netvlad_resnet50-triplet train-slurm.sh
+# sbatch --j 1014-s1-graphvlad_resnet50-multisimilarity train-slurm.sh
 
 ####################################################################################################
 
@@ -64,4 +64,4 @@ echo "Other nodes: $NODES"
 #==============
 echo "Starting $SLURM_GPUS_PER_TASK process(es) on each node..."
 # bash train-s.sh ${METHOD} ${ARCH} ${LOSS} ${RESUMEPATH}
-python run.py --config ./config/netvlad_resnet50.yaml --batch_size 40 --lr 0.0001
+python run.py --config ./config/graphvlad_resnet50.yaml --batch_size 10 --lr 0.0001

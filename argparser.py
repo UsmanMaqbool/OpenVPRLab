@@ -85,7 +85,7 @@ def update_config_with_args_and_defaults(config: Dict[str, Any], args: argparse.
             'val_set_names': ["msls-val"],
             'train_image_size': [320, 320],
             'val_image_size': None,
-            'batch_size': 60,
+            'batch_size': 10,
             'img_per_place': 4,
             'num_workers': 8,
         },

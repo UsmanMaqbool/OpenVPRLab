@@ -105,12 +105,18 @@ def train(config):
         ## Initialize NetVLAD layer
         aggregator.initialize_netvlad_layer(config, datamodule, backbone)
     
-            
+    if config['aggregator']['graphvlad']:
+        segmentation = get_instance(config['segmentation']['module'], config['segmentation']['class'], config['segmentation']['params'])
+        segmentation.load_state_dict(torch.load(config['segmentation']['fastscnn']))
+    else:
+        segmentation = None
+                
     loss_function = get_instance(config['loss_function']['module'], config['loss_function']['class'], config['loss_function']['params'])
 
     vpr_model = VPRFramework(
         backbone=backbone,
         aggregator=aggregator,
+        segmentation=segmentation,
         loss_function=loss_function,
         optimizer=config['trainer']['optimizer'],
         lr=config['trainer']['lr'],
