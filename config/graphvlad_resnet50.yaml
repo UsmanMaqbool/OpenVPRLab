@@ -52,9 +52,9 @@ aggregator:
   class: NetVLAD    # class name in the __init__.py file in the aggregators directory
   graphvlad: True
   params:
-    clusters_num: 16
+    clusters_num: 64
     alpha: 100.0
-    dim: 1024
+    dim: 512
   
 
   # Example of MixVPR

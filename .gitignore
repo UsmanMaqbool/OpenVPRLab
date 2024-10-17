@@ -13,6 +13,7 @@ data/train/*
 data/val/*
 !data/train/.gitkeep
 !data/val/.gitkeep
+gsvcities/*
 
 docs/
 

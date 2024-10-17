@@ -149,7 +149,13 @@ class SelectRegions(nn.Module):
         self.NB = NB
         self.mask = Mask
         self.visualize = False
+        in_channels = 1024
+        proj_channels = 512
+        # reduce input dimension using 3x3 conv
+        self.proj_c = torch.nn.Conv2d(in_channels, proj_channels, kernel_size=3, padding=1)
         
+        # normalize the input to the BoQ blocks
+        self.norm_input = torch.nn.LayerNorm(proj_channels)
     def relabel(self, img):
         """
         This function relabels the predicted labels so that cityscape dataset can process
@@ -227,6 +233,8 @@ class SelectRegions(nn.Module):
         
         # Forward pass through base_model
         x = base_model(x)
+        x = self.proj_c(x)
+        # x = self.norm_input(x)
         N, C, H, W = x.shape
         
         # Initialize graph nodes tensor
@@ -338,7 +346,9 @@ class GraphVLAD(nn.Module):
     def forward(self, x):
         node_features_list = []
         neighborsFeat = []
+        
 
+        
         x_size, x_nodes = self.SelectRegions(x, self.base_model, self.fastscnn)
 
         for i in range(self.NB+1):
@@ -360,5 +370,6 @@ class GraphVLAD(nn.Module):
         
         # Clear node_features_list to free up memory
         del node_features_list
+
         
         return gvlad
