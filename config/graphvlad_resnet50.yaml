@@ -54,7 +54,7 @@ aggregator:
   params:
     clusters_num: 64
     alpha: 100.0
-    dim: 512
+    dim: 1024
   
 
   # Example of MixVPR

@@ -83,10 +83,10 @@ class VPRFramework(L.LightningModule):
         # x = self.backbone(x)
         # x = self.aggregator(x)
 
-        # if not self.gvlad:
-        #     x = self.backbone(x)
-        #     x = self.aggregator(x)
-        # else:
+        # # if not self.gvlad:
+        # #     x = self.backbone(x)
+        # #     x = self.aggregator(x)
+        # # else:
         x = self.GraphVLAD(x)
         return x
     

@@ -149,13 +149,13 @@ class SelectRegions(nn.Module):
         self.NB = NB
         self.mask = Mask
         self.visualize = False
-        in_channels = 1024
-        proj_channels = 512
-        # reduce input dimension using 3x3 conv
-        self.proj_c = torch.nn.Conv2d(in_channels, proj_channels, kernel_size=3, padding=1)
+        # in_channels = 1024
+        # proj_channels = 512
+        # # reduce input dimension using 3x3 conv
+        # self.proj_c = torch.nn.Conv2d(in_channels, proj_channels, kernel_size=3, padding=1)
         
-        # normalize the input to the BoQ blocks
-        self.norm_input = torch.nn.LayerNorm(proj_channels)
+        # # normalize the input to the BoQ blocks
+        # self.norm_input = torch.nn.LayerNorm(proj_channels)
     def relabel(self, img):
         """
         This function relabels the predicted labels so that cityscape dataset can process
@@ -233,7 +233,7 @@ class SelectRegions(nn.Module):
         
         # Forward pass through base_model
         x = base_model(x)
-        x = self.proj_c(x)
+        # x = self.proj_c(x)
         # x = self.norm_input(x)
         N, C, H, W = x.shape
         
@@ -338,7 +338,12 @@ class GraphVLAD(nn.Module):
                 
         self.applyGNN = applyGNN()
         self.SelectRegions = SelectRegions(self.NB, self.mask)
-
+        in_channels = 65536
+        proj_channels = 4096
+        # self.proj_c = torch.nn.Conv2d(in_channels, proj_channels, kernel_size=3, padding=1)
+        # self.bn1 = nn.BatchNorm1d(in_channels)
+        self.proj_c = nn.Linear(in_channels, proj_channels)
+        
     def _init_params(self):
         self.base_model._init_params()
         self.net_vlad._init_params()
@@ -353,10 +358,11 @@ class GraphVLAD(nn.Module):
 
         for i in range(self.NB+1):
             vlad_x = self.net_vlad(x_nodes[i])
+            # vlad_x = self.bn1(vlad_x)
             # vlad_x = F.normalize(vlad_x, p=2, dim=2)
             # vlad_x = vlad_x.view(x_size, -1)
             # vlad_x = F.normalize(vlad_x, p=2, dim=1)
-            neighborsFeat.append(self.net_vlad(x_nodes[i]))
+            neighborsFeat.append(vlad_x)
         node_features_list.append(neighborsFeat[self.NB])
         node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
         del neighborsFeat
@@ -365,7 +371,7 @@ class GraphVLAD(nn.Module):
 
         gvlad = torch.add(gvlad, vlad_x)
         gvlad = F.normalize(gvlad, p=2, dim=1)
-
+        gvlad = self.proj_c(gvlad)
         gvlad = gvlad.view(-1, vlad_x.shape[1])
         
         # Clear node_features_list to free up memory

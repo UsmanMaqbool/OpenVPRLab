@@ -102,14 +102,16 @@ def train(config):
     aggregator = get_instance(config['aggregator']['module'], config['aggregator']['class'], config['aggregator']['params'])
     
     # if config['aggregator']['class'] in ["NetVLAD"]:  # If using NetVLAD layer, initialize it
-    #     ## Initialize NetVLAD layer
-    #     aggregator.initialize_netvlad_layer(config, datamodule, backbone)
+        ## Initialize NetVLAD layer
+        # aggregator.initialize_netvlad_layer(config, datamodule, backbone)
     
     if config['aggregator']['graphvlad']:
         segmentation = get_instance(config['segmentation']['module'], config['segmentation']['class'], config['segmentation']['params'])
         segmentation.load_state_dict(torch.load(config['segmentation']['fastscnn']))
     else:
         segmentation = None
+        
+    # segmentation = None
                 
     loss_function = get_instance(config['loss_function']['module'], config['loss_function']['class'], config['loss_function']['params'])
 

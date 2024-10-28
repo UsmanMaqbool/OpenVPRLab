@@ -21,7 +21,7 @@
 #SBATCH --distribution=cyclic:cyclic
 
 ## To RUN
-# sbatch --j 1014-s1-graphvlad_resnet50-multisimilarity train-slurm.sh
+# sbatch --j 1021-s1-graphvlad64-4k-linear train-slurm.sh
 
 ####################################################################################################
 
