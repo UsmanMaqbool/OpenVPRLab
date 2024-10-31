@@ -135,8 +135,8 @@ class GraphSage(nn.Module):
 class applyGNN(nn.Module):
     def __init__(self):
         super(applyGNN, self).__init__()
-        self.input_dim = 4096 
-        self.hidden_dim = [2048,2048]
+        self.input_dim = 2048 
+        self.hidden_dim = [1024,1024]
         self.num_neighbors_list = [5]
         self.graph = GraphSage(input_dim=self.input_dim, hidden_dim=self.hidden_dim,
                   num_neighbors_list=self.num_neighbors_list)
@@ -149,13 +149,13 @@ class SelectRegions(nn.Module):
         self.NB = NB
         self.mask = Mask
         self.visualize = False
-        in_channels = 1024
-        proj_channels = 512
+        # in_channels = 1024
+        # proj_channels = 512
         # reduce input dimension using 3x3 conv
-        self.proj_c = torch.nn.Conv2d(in_channels, proj_channels, kernel_size=3, padding=1)
+        # self.proj_c = torch.nn.Conv2d(in_channels, proj_channels, kernel_size=3, padding=1)
         
-        # normalize the input to the BoQ blocks
-        self.norm_input = torch.nn.LayerNorm(proj_channels)
+        # # normalize the input to the BoQ blocks
+        # self.norm_input = torch.nn.LayerNorm(proj_channels)
     def relabel(self, img):
         """
         This function relabels the predicted labels so that cityscape dataset can process
@@ -233,7 +233,7 @@ class SelectRegions(nn.Module):
         
         # Forward pass through base_model
         x = base_model(x)
-        x = self.proj_c(x)
+        # x = self.proj_c(x)
         # x = self.norm_input(x)
         N, C, H, W = x.shape
         
@@ -327,11 +327,11 @@ class SelectRegions(nn.Module):
         
         return x.size(0), x_nodes
 class GraphVLAD(nn.Module):
-    def __init__(self, base_model, net_vlad, fastscnn, NB):
+    def __init__(self, base_model, aggregator, fastscnn, NB):
         super(GraphVLAD, self).__init__()
         self.base_model = base_model
         self.fastscnn = fastscnn
-        self.net_vlad = net_vlad
+        self.aggregator = aggregator
         
         self.NB = NB
         self.mask = True
@@ -341,35 +341,30 @@ class GraphVLAD(nn.Module):
 
     def _init_params(self):
         self.base_model._init_params()
-        self.net_vlad._init_params()
+        self.aggregator._init_params()
 
     def forward(self, x):
         node_features_list = []
         neighborsFeat = []
         
+        # _, x_nodes = self.SelectRegions(x, self.base_model, self.fastscnn)
 
+        # for i in range(self.NB+1):
+        #     neighborsFeat.append(self.aggregator(x_nodes[i]).unsqueeze(0))
+        # node_features_list.append(neighborsFeat[self.NB].squeeze(0))
+        # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
+        # del neighborsFeat
+        # gvlad = self.applyGNN(node_features_list)
+        # gvlad = F.normalize(gvlad, p=2, dim=1)
+
+        # gvlad = torch.add(gvlad, vlad_x)
+        # gvlad = F.normalize(gvlad, p=2, dim=1)
+
+        # gvlad = gvlad.view(-1, vlad_x.shape[1])
         
-        x_size, x_nodes = self.SelectRegions(x, self.base_model, self.fastscnn)
-
-        for i in range(self.NB+1):
-            vlad_x = self.net_vlad(x_nodes[i])
-            # vlad_x = F.normalize(vlad_x, p=2, dim=2)
-            # vlad_x = vlad_x.view(x_size, -1)
-            # vlad_x = F.normalize(vlad_x, p=2, dim=1)
-            neighborsFeat.append(self.net_vlad(x_nodes[i]))
-        node_features_list.append(neighborsFeat[self.NB])
-        node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
-        del neighborsFeat
-        gvlad = self.applyGNN(node_features_list)
-        gvlad = F.normalize(gvlad, p=2, dim=1)
-
-        gvlad = torch.add(gvlad, vlad_x)
-        gvlad = F.normalize(gvlad, p=2, dim=1)
-
-        gvlad = gvlad.view(-1, vlad_x.shape[1])
-        
-        # Clear node_features_list to free up memory
-        del node_features_list
-
+        # # Clear node_features_list to free up memory
+        # del node_features_list
+        gvlad = self.base_model(x)
+        gvlad = self.aggregator(gvlad)
         
         return gvlad

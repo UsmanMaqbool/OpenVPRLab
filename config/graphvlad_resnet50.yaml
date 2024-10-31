@@ -48,14 +48,25 @@ backbone:
   #   num_unfrozen_blocks: 2
 
 aggregator:
-  module: src.models.aggregators # module path
-  class: NetVLAD    # class name in the __init__.py file in the aggregators directory
   graphvlad: True
+  module: src.models.aggregators
+  class: MixVPR # class name
   params:
-    clusters_num: 64
-    alpha: 100.0
-    dim: 512
-  
+    in_channels:  # if left blank we will use backbone.out_channels.
+    in_h: 20            # input height (this depends on the input image size and the backbone)
+    in_w: 20
+    out_channels: 512
+    mix_depth: 4
+    mlp_ratio: 1
+    out_rows: 4
+
+  # module: src.models.aggregators # module path
+  # class: NetVLAD    # class name in the __init__.py file in the aggregators directory
+  # params:
+  #   clusters_num: 64
+  #   alpha: 100.0
+  #   dim: 512
+
 
   # Example of MixVPR
   # module: src.models.aggregators

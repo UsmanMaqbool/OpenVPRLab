@@ -80,14 +80,14 @@ class VPRFramework(L.LightningModule):
         Returns:
             Tensor (or list of tensors) after passing through the backbone and aggregator.
         """
-        # x = self.backbone(x)
-        # x = self.aggregator(x)
+        x = self.backbone(x)
+        x = self.aggregator(x)
 
         # if not self.gvlad:
         #     x = self.backbone(x)
         #     x = self.aggregator(x)
         # else:
-        x = self.GraphVLAD(x)
+        # x = self.GraphVLAD(x)
         return x
     
     def configure_optimizers(self):

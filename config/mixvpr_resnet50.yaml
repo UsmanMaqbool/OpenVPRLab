@@ -40,7 +40,7 @@ aggregator:
     in_channels:  # if left blank we will use backbone.out_channels.
     in_h: 20            # input height (this depends on the input image size and the backbone)
     in_w: 20
-    out_channels: 512
+    out_channels: 1024
     mix_depth: 4
     mlp_ratio: 1
     out_rows: 4
