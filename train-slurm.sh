@@ -63,6 +63,7 @@ echo "Other nodes: $NODES"
 # PYTHON SCRIPT
 #==============
 echo "Starting $SLURM_GPUS_PER_TASK process(es) on each node..."
-# bash train-s.sh ${METHOD} ${ARCH} ${LOSS} ${RESUMEPATH}
-# python run.py --config ./config/mixvpr_resnet50.yaml --batch_size 40 --lr 0.0001
-python test.py --config ./config/mixvpr_resnet50.yaml --batch_size 40 --load_state_dict "./logs/resnet50/MixVPR/mixvpr_resnet50.yaml/checkpoints/epoch(17)_step(28134)_R1[0.8486]_R5[0.9189].ckpt"
+
+python run.py --config ./config/graphvlad_resnet50.yaml --batch_size 40 --lr 0.0001
+
+# python test.py --config ./config/mixvpr_resnet50.yaml --batch_size 40 --load_state_dict "./logs/resnet50/MixVPR/mixvpr_resnet50.yaml/checkpoints/epoch(17)_step(28134)_R1[0.8486]_R5[0.9189].ckpt"
