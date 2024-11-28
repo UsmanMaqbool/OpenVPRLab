@@ -10,6 +10,11 @@ import faiss
 from torch.nn import init
 from torchvision import transforms
 from torchvision.ops import masks_to_boxes
+
+from torch_geometric.data import Data
+from torch_geometric.nn import GATConv
+
+
 class NeighborAggregator(nn.Module):
     def __init__(self, input_dim, output_dim,
                  use_bias=False, aggr_method="mean"):
@@ -267,11 +272,13 @@ class SelectRegions(nn.Module):
             
             # Reorder the filtered labels based on the sorted indices
             sorted_labels = labels_all[sorted_indices]
-            # Apply the mask after sorting
-            mask_t = sorted_counts >= 10000
+            
+            # # Apply the mask after sorting
+            mask_t = sorted_counts >= 5000
             labels = sorted_labels[mask_t]
 
-
+            # labels = labels_all
+            
             # Create masks for each label and convert them to bounding boxes
             masks = all_label_mask == labels[:, None, None]
             all_label_mask = rsizet(all_label_mask.unsqueeze(0)).squeeze(0)
@@ -288,7 +295,7 @@ class SelectRegions(nn.Module):
             boxes = (regions / 16).to(torch.long)
             
             # sub_nodes.append(embed_image.unsqueeze(0))
-            for i, _ in enumerate(labels[:min(2, len(labels))]):
+            for i, _ in enumerate(labels[:min(5, len(labels))]):
                 x_min, y_min, x_max, y_max = boxes[i]
                 embed_image_c = rsizet(pre_l2[:, y_min:y_max, x_min:x_max])
                 if self.visualize:
@@ -326,8 +333,22 @@ class SelectRegions(nn.Module):
         del graph_nodes, sub_nodes, pred_all, labels_all, label_count_all, masks, all_label_mask
         
         return x.size(0), x_nodes
+    
+class GATModel(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, heads=1):
+        super(GATModel, self).__init__()
+        
+        self.gat_conv1 = GATConv(in_channels, out_channels, heads=heads, concat=True)
+        self.gat_conv2 = GATConv(out_channels * heads, out_channels, heads=1, concat=False)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        x = self.gat_conv1(x, edge_index)
+        # x = F.relu(x)
+        # x = self.gat_conv2(x, edge_index)
+        return x
 class GraphVLAD(nn.Module):
-    def __init__(self, base_model, aggregator, fastscnn, NB):
+    def __init__(self, base_model, aggregator, fastscnn, NB, edge_index):
         super(GraphVLAD, self).__init__()
         self.base_model = base_model
         self.fastscnn = fastscnn
@@ -338,6 +359,34 @@ class GraphVLAD(nn.Module):
                 
         self.applyGNN = applyGNN()
         self.SelectRegions = SelectRegions(self.NB, self.mask)
+        
+        # Instantiate model
+        self.in_channels = 2048  # Feature dimension
+        self.out_channels = 2048  # Output dimension of the GAT layer
+        self.heads = 1  # Number of attention heads
+        self.GATModel = GATModel(self.in_channels, self.out_channels, self.heads)
+        
+        self.proj_channels = 1024
+        #reduce input dimension using 3x3 conv
+        self.proj_c = torch.nn.Conv2d(self.in_channels, self.proj_channels, kernel_size=3, padding=1)
+        self.channel_proj = nn.Linear(self.in_channels, self.proj_channels)
+        
+        # self.edge_index = []
+        # for i in range(self.NB):
+        #     # Connecting global to local and local to global
+        #     self.edge_index.append([self.NB, i])
+        #     self.edge_index.append([i, self.NB])
+        # self.edge_index = torch.tensor(self.edge_index, dtype=torch.long).t().contiguous()
+        # # self.edge_index = edge_index
+        self.edge_index = torch.tensor([
+            [0, 1, 2, 3, 4, 5],  # source nodes
+            [5, 5, 5, 5, 5, 5]   # target nodes
+            ], dtype=torch.long).contiguous()
+
+        # Move edge_index to the GPU, assuming a GPU is available
+        if torch.cuda.is_available():
+            self.edge_index = self.edge_index.cuda()
+
 
     def _init_params(self):
         self.base_model._init_params()
@@ -358,28 +407,85 @@ class GraphVLAD(nn.Module):
             # vlad_x = vlad_x.view(x_size, -1)
             # vlad_x = F.normalize(vlad_x, p=2, dim=1)
             neighborsFeat.append(vlad_x)
-        node_features_list.append(neighborsFeat[self.NB])
-        node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
-            
-            
+        # node_features_list.append(neighborsFeat[self.NB])
+        # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))        
+        zz = torch.concat(neighborsFeat[0:self.NB+1])
+        feat_size = vlad_x.shape[0]
+        data = Data(x=zz, edge_index=self.edge_index)
+        data = self.GATModel(data)
+        
+        data = data[-feat_size:]
+        ori = zz[-feat_size:] 
+        
+        data2 = self.channel_proj(data)
+        ori_2 = self.channel_proj(ori)
+        data = torch.cat((data2,ori_2), dim=1) 
+        data = data + ori
+        data = F.normalize(data, p=2, dim=1)
         #     neighborsFeat.append(vlad_x.unsqueeze(0))
         # node_features_list.append(neighborsFeat[self.NB])
         # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
 
-        gvlad = self.applyGNN(node_features_list)
+        # gvlad = self.applyGNN(node_features_list)
         
         # gvlad = F.normalize(gvlad, p=2, dim=1)
         # gvlad = F.relu(gvlad)
 
 
         # gvlad = torch.add(gvlad, vlad_x)
-        gvlad = F.normalize(gvlad, p=2, dim=1)
+        # gvlad = F.normalize(gvlad, p=2, dim=1)
 
-        gvlad = gvlad.view(-1, vlad_x.shape[1])
+        # gvlad = gvlad.view(-1, vlad_x.shape[1])
         
         # Clear node_features_list to free up memory
-        del neighborsFeat, node_features_list
+        # del neighborsFeat, node_features_list
         # x = self.base_model(x)
         # x = self.aggregator(x)
         
-        return gvlad
+        return data[-vlad_x.shape[0]:]
+    
+    
+    
+#     import torch
+# import torch.nn.functional as F
+# from torch_geometric.nn import GATConv
+# from torch_geometric.data import Data
+
+# # Assuming global feature and local features are as follows
+# global_feature = torch.randn(1, 2048)  # Global feature of shape [1, 2048]
+# local_features = torch.randn(5, 2048)  # Local features of shape [5, 2048]
+
+# # Combine global and local features into a single node feature matrix
+# x = torch.cat([global_feature, local_features], dim=0)  # Shape will be [6, 2048]
+
+# # Define edges, 0 is the global feature, 1-5 are the local features
+# edge_index = torch.tensor([
+#     [0, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5],  # source nodes
+#     [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0]   # target nodes
+# ], dtype=torch.long)
+
+# # Create the Graph Data object
+# data = Data(x=x, edge_index=edge_index)
+
+# # Define the GAT model
+# class GAT(torch.nn.Module):
+#     def __init__(self, in_channels, out_channels, heads=1):
+#         super(GAT, self).__init__()
+#         self.gat_conv = GATConv(in_channels, out_channels, heads=heads, concat=False)
+
+#     def forward(self, data):
+#         x, edge_index = data.x, data.edge_index
+#         x = self.gat_conv(x, edge_index)
+#         return x
+
+# # Initialize and apply the model
+# model = GAT(in_channels=2048, out_channels=2048, heads=1)
+# model.eval()  # Set the model to evaluation mode
+
+# with torch.no_grad():  # No need to compute gradients for inference
+#     updated_features = model(data)
+
+# # Extract the updated global feature
+# updated_global_feature = updated_features[0]
+# print(updated_global_feature.shape)  # Should output torch.Size([2048])
+# print(updated_global_feature)

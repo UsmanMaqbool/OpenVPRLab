@@ -59,7 +59,17 @@ class VPRFramework(L.LightningModule):
         self.milestones = milestones
         self.lr_mult = lr_mult
         self.verbose = verbose
-        self.GraphVLAD = graphvlad.GraphVLAD(self.backbone, self.aggregator, self.segmentation, NB=5)
+        self.NB = 5
+        # Edge list making global node connected to all local nodes
+        # self.edge_index = []
+        # for i in range(self.NB):
+        #     # Connecting global to local and local to global
+        #     self.edge_index.append([self.NB, i])
+        #     self.edge_index.append([i, self.NB])
+        # self.edge_index = torch.tensor(self.edge_index, dtype=torch.long).t().contiguous()
+        self.edge_index = torch.tensor([[5, 0, 5, 1, 5, 2, 5, 3, 5, 4],[0, 5, 1, 5, 2, 5, 3, 5, 4, 5]], dtype=torch.long)
+        self.edge_index = self.edge_index.to(self.device)
+        self.GraphVLAD = graphvlad.GraphVLAD(self.backbone, self.aggregator, self.segmentation, NB=self.NB, edge_index=self.edge_index)
         
         # save the hyperparameters except the classes
         # self.save_hyperparameters(ignore=["loss_function", "backbone", "aggregator", "verbose"])

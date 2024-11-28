@@ -21,7 +21,7 @@
 #SBATCH --distribution=cyclic:cyclic
 
 ## To RUN
-# sbatch --j R-1031-s1-mixvpr-resnet50-s1.48984456-test train-slurm.sh
+# sbatch --j R-1126-mixvpr-proj-cat-add train-slurm.sh
 
 ####################################################################################################
 
