@@ -1,0 +1,73 @@
+Mon Dec  2 19:36:46 EST 2024
+/home/m.maqboolbhutta/usman_ws/codes/OpenVPRLab
+Host: c1009a-s23
+Other nodes: 
+Mon Dec  2 19:36:46 EST 2024
+/home/m.maqboolbhutta/usman_ws/codes/OpenVPRLab
+*
+* Visual Studio Code Server
+*
+* By using the software, you agree to
+* the Visual Studio Code Server License Terms (https://aka.ms/vscode-server-license) and
+* the Microsoft Privacy Statement (https://privacy.microsoft.com/en-US/privacystatement).
+*
+[2024-12-02 19:36:49] info Using Github for authentication, run `code tunnel user login --provider <provider>` option to change this.
+To grant access to the server, please log into https://github.com/login/device and use code FA6C-2D44
+
+Open this link in your browser https://vscode.dev/tunnel/yes/blue/hmedeiros/m.maqboolbhutta/codes/OpenVPRLab
+
+[2024-12-02 19:39:35] info [tunnels::connections::relay_tunnel_host] Opened new client on channel 2
+[2024-12-02 19:39:35] info [russh::server] wrote id
+[2024-12-02 19:39:35] info [russh::server] read other id
+[2024-12-02 19:39:35] info [russh::server] session is running
+[2024-12-02 19:39:36] info [rpc.0] Checking /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/log.txt and /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/pid.txt for a running server...
+[2024-12-02 19:39:36] info [rpc.0] Starting server...
+[2024-12-02 19:39:36] info [rpc.0] Server started
+[2024-12-02 19:40:13] info [rpc.0] Forwarding port 57907
+[2024-12-02 19:40:30] info [rpc.0] Disposed of connection to running server.
+[2024-12-02 19:40:32] info [tunnels::connections::relay_tunnel_host] Opened new client on channel 3
+[2024-12-02 19:40:32] info [russh::server] wrote id
+[2024-12-02 19:40:32] info [russh::server] read other id
+[2024-12-02 19:40:32] info [russh::server] session is running
+[2024-12-02 19:40:32] info [rpc.2] Checking /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/log.txt and /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/pid.txt for a running server...
+[2024-12-02 19:40:32] info [rpc.2] Found running server (pid=3525378)
+[2024-12-02 19:40:37] info [rpc.2] Forwarding port 57907
+[2024-12-02 19:40:43] info [rpc.2] Forwarding port 37909
+[2024-12-02 19:40:44] info [rpc.2] Forwarding port 59621
+[2024-12-02 19:40:46] info [rpc.2] Unforwarding port 59621
+[2024-12-02 19:43:24] info [rpc.2] Unforwarding port 37909
+[2024-12-02 19:58:59] info [rpc.2] Forwarding port 56487
+[2024-12-02 20:09:59] info [rpc.2] Forwarding port 57157
+[2024-12-02 20:34:02] info [rpc.2] Unforwarding port 57157
+[2024-12-02 20:34:02] info [rpc.2] Unforwarding port 56487
+[2024-12-02 20:34:11] info [rpc.2] Forwarding port 49341
+[2024-12-02 20:43:03] info [rpc.2] Forwarding port 55673
+[2024-12-02 21:25:57] info [rpc.2] Unforwarding port 55673
+[2024-12-02 21:25:57] info [rpc.2] Unforwarding port 49341
+[2024-12-02 21:27:58] info [rpc.2] Forwarding port 58333
+[2024-12-02 21:32:52] info [rpc.2] Unforwarding port 58333
+[2024-12-02 21:32:56] info [rpc.2] Forwarding port 42635
+[2024-12-02 21:34:50] info [rpc.2] Unforwarding port 42635
+[2024-12-02 21:34:54] info [rpc.2] Forwarding port 51055
+[2024-12-02 21:35:53] info [rpc.2] Unforwarding port 51055
+[2024-12-02 21:35:58] info [rpc.2] Forwarding port 47821
+[2024-12-02 21:48:07] info [rpc.2] Unforwarding port 47821
+[2024-12-02 21:49:21] info [rpc.2] Forwarding port 49085
+[2024-12-02 21:50:30] info [rpc.2] Disposed of connection to running server.
+[2024-12-02 21:50:34] info [tunnels::connections::relay_tunnel_host] Opened new client on channel 4
+[2024-12-02 21:50:34] info [russh::server] wrote id
+[2024-12-02 21:50:34] info [russh::server] read other id
+[2024-12-02 21:50:34] info [russh::server] session is running
+[2024-12-02 21:50:35] info [rpc.3] Checking /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/log.txt and /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/pid.txt for a running server...
+[2024-12-02 21:50:35] info [rpc.3] Found running server (pid=3525378)
+[2024-12-02 21:50:38] info [rpc.3] Forwarding port 57907
+[2024-12-02 21:50:38] info [rpc.3] Forwarding port 49085
+[2024-12-02 21:51:19] info [rpc.3] Forwarding port 40651
+[2024-12-02 22:03:24] info [rpc.3] Unforwarding port 40651
+[2024-12-02 22:10:10] info [rpc.3] Forwarding port 52739
+[2024-12-02 22:11:23] info [rpc.3] Forwarding port 50307
+[2024-12-02 22:11:28] info [rpc.3] Unforwarding port 50307
+[2024-12-02 22:11:28] info [rpc.3] Unforwarding port 52739
+[2024-12-02 22:13:19] info [rpc.3] Forwarding port 49233
+[2024-12-02 22:18:53] info [rpc.3] Unforwarding port 49233
+[2024-12-03 07:12:47] info [rpc.3] Disposed of connection to running server.

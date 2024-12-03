@@ -1,3 +1,4 @@
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -246,8 +247,8 @@ class SelectRegions(nn.Module):
         N, C, H, W = x.shape
         
         # Initialize graph nodes tensor
-        # graph_nodes = torch.zeros(N, self.NB, C, H, W).cuda()
-        graph_nodes = torch.zeros(N, C, H, W).cuda()
+        graph_nodes = torch.zeros(N, 6, C, H, W).cuda()
+        # graph_nodes = torch.zeros(N, C, H, W).cuda()
 
         rsizet = transforms.Resize((H, W))
         
@@ -267,7 +268,7 @@ class SelectRegions(nn.Module):
         
         
         
-        sub_nodes = []
+        global_feat = []
         
         for img_i in range(N):
             all_label_mask = pred_all[img_i]
@@ -283,7 +284,7 @@ class SelectRegions(nn.Module):
             sorted_labels = labels_all[sorted_indices]
             
             # # Apply the mask after sorting
-            mask_t = sorted_counts >= 5000
+            mask_t = sorted_counts >= 1000
             labels = sorted_labels[mask_t]
 
             # labels = labels_all
@@ -293,7 +294,7 @@ class SelectRegions(nn.Module):
             all_label_mask = rsizet(all_label_mask.unsqueeze(0)).squeeze(0)
 
 
-            
+            sub_nodes = []
             pre_l2 = x[img_i]
             # if self.visualize:
             #     save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i)
@@ -307,18 +308,15 @@ class SelectRegions(nn.Module):
             for i, label in enumerate(labels[:min(5, len(labels))]):
                 binary_mask = (all_label_mask == label).float()
                 local_feat = x[img_i] * binary_mask
-                sub_nodes.append(local_feat)
                 pre_l2 = (x[img_i] * binary_mask) + pre_l2
-
+                sub_nodes.append(local_feat.unsqueeze(0))
             
+            global_feat.append(pre_l2.unsqueeze(0))
             
-            
-            
-            
-            graph_nodes[img_i] = pre_l2
+            # graph_nodes[img_i] = pre_l2
         
             
-        x_nodes = graph_nodes
+        
 
         #     # sub_nodes.append(embed_image.unsqueeze(0))
         #     for i, _ in enumerate(labels[:min(5, len(labels))]):
@@ -332,30 +330,32 @@ class SelectRegions(nn.Module):
         #         #     save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=embed_image_c, img_i=img_i, file_name=embed_file_name)
         #         sub_nodes.append(embed_image_c.unsqueeze(0))
 
-        #     if len(sub_nodes) < self.NB:
-        #         if self.visualize:
-        #             save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i, file_name='pre_l2.png')
-        #         bb_x = [
-        #             [int(W / 4), int(H / 4), int(3 * W / 4), int(3 * H / 4)],
-        #             [0, 0, int(2 * W / 3), H],
-        #             [int(W / 3), 0, W, H],
-        #             [0, 0, W, int(2 * H / 3)],
-        #             [0, int(H / 3), W, H]                    
-        #         ]
-        #         for i in range(len(bb_x) - len(sub_nodes)):
-        #             x_nodes = pre_l2[:, bb_x[i][1]:bb_x[i][3], bb_x[i][0]:bb_x[i][2]]
-        #             sub_nodes.append(rsizet(x_nodes.unsqueeze(0)))
-        #             if self.visualize:
-        #                 patch_file_name = f'patch_{i}.png'  # Customize the naming pattern as needed
-        #                 save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i, file_name=patch_file_name, patch_idx=i)
+            if len(sub_nodes) < self.NB:
+                total_required = self.NB-len(sub_nodes)
+                # if self.visualize:
+                #     save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i, file_name='pre_l2.png')
+                bb_x = [
+                    [int(W / 4), int(H / 4), int(3 * W / 4), int(3 * H / 4)],
+                    [0, 0, int(2 * W / 3), H],
+                    [int(W / 3), 0, W, H],
+                    [0, 0, W, int(2 * H / 3)],
+                    [0, int(H / 3), W, H]                    
+                ]
+                for i in range(total_required):
+                    x_nodes = pre_l2[:, bb_x[i][1]:bb_x[i][3], bb_x[i][0]:bb_x[i][2]]
+                    sub_nodes.append(rsizet(x_nodes.unsqueeze(0)))
+                    if self.visualize:
+                        patch_file_name = f'patch_{i}.png'  # Customize the naming pattern as needed
+                        save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i, file_name=patch_file_name, patch_idx=i)
 
-        #     # Stack the cropped patches and store them in graph_nodes
-        #     aa = torch.stack(sub_nodes, 1)
-        #     graph_nodes[img_i] = aa[0]
+            sub_nodes.append(pre_l2.unsqueeze(0))
+            # Stack the cropped patches and store them in graph_nodes
+            aa = torch.stack(sub_nodes, 1)
+            graph_nodes[img_i] = aa[0]
 
-        # # Reshape and concatenate graph_nodes with the original tensor x
-        # x_nodes = graph_nodes.view(self.NB, N, C, H, W)
-        # x_nodes = torch.cat((x_nodes, x.unsqueeze(0)))
+        # Reshape and concatenate graph_nodes with the original tensor x
+        x_nodes = graph_nodes.view(6, N, C, H, W)
+        # x_nodes = torch.cat((x_nodes, pre_l2.unsqueeze(0)))
         
         # Clean up
         # del graph_nodes, sub_nodes, pred_all, labels_all, label_count_all, masks, all_label_mask
@@ -433,7 +433,7 @@ class GraphVLAD(nn.Module):
         neighborsFeat = []
       
         _, x_nodes = self.SelectRegions(x, self.base_model, self.fastscnn)
-        x = self.aggregator(x_nodes)
+        # x = self.aggregator(x_nodes)
         
         # l1 = self.proj_c(x_nodes[0])
         # l2 = self.proj_c(x_nodes[1])
@@ -445,28 +445,30 @@ class GraphVLAD(nn.Module):
         # lll = torch.cat((gg, ll), dim=1)
         # x = self.aggregator(lll)
         
-        # for i in range(self.NB+1):
-        #     xx = self.proj_c(x_nodes[i])
-        #     # vlad_x = self.aggregator(x_nodes[i])
+        for i in range(self.NB+1):
+            # xx = self.proj_c(x_nodes[i])
+            vlad_x = self.aggregator(x_nodes[i])
         #     # vlad_x = F.normalize(vlad_x, p=2, dim=2)
         #     # vlad_x = vlad_x.view(x_size, -1)
         #     # vlad_x = F.normalize(vlad_x, p=2, dim=1)
-        #     neighborsFeat.append(vlad_x)
+            neighborsFeat.append(vlad_x)
         # # node_features_list.append(neighborsFeat[self.NB])
         # # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))        
-        # zz = torch.concat(neighborsFeat[0:self.NB+1])
-        # feat_size = vlad_x.shape[0]
-        # data = Data(x=zz, edge_index=self.edge_index)
-        # data = self.GATModel(data)
+        zz = torch.concat(neighborsFeat[0:self.NB+1])
+        feat_size = vlad_x.shape[0]
+        data = Data(x=zz, edge_index=self.edge_index)
+        data = self.GATModel(data)
         
         # data = data[-feat_size:]
-        # ori = zz[-feat_size:] 
+        ori = zz[-feat_size:] 
         
         # data2 = self.channel_proj(data)
         # ori_2 = self.channel_proj(ori)
         # data = torch.cat((data2,ori_2), dim=1) 
         # data = data + ori
         # data = F.normalize(data, p=2, dim=1)
+        
+        
         #     neighborsFeat.append(vlad_x.unsqueeze(0))
         # node_features_list.append(neighborsFeat[self.NB])
         # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
@@ -487,7 +489,7 @@ class GraphVLAD(nn.Module):
         # x = self.base_model(x)
         # x = self.aggregator(x)
         
-        return x
+        return ori
     
     
     
