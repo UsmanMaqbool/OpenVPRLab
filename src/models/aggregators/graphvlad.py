@@ -193,24 +193,24 @@ class SelectRegions(nn.Module):
         img[img == 10] = 5
         
 
-        ## Rider 12 + motorcycle 17 + bicycle 18
-        img[img == 18] = 255
-        img[img == 17] = 255
-        img[img == 12] = 255
+#         ## Rider 12 + motorcycle 17 + bicycle 18
+#         img[img == 18] = 255
+#         img[img == 17] = 255
+#         img[img == 12] = 255
 
 
-        # cars 13 + truck 14 + bus 15 + train 16
-        img[img == 16] = 255
-        img[img == 15] = 255
-        img[img == 14] = 255
-        img[img == 13] = 255
-
-        ## Person
-        img[img == 11] = 255
+#         # cars 13 + truck 14 + bus 15 + train 16
+#         img[img == 16] = 255
+#         img[img == 15] = 255
+#         img[img == 14] = 255
+#         img[img == 13] = 255
+# s
+#         ## Person
+#         img[img == 11] = 255
 
         ### Don't need, make these 255
         ## Background
-        img[img == 19] = 255
+        # img[img == 19] = 255
 
 
         return img                          
@@ -264,10 +264,7 @@ class SelectRegions(nn.Module):
         if self.visualize:
             # Assuming `pred_all` is your batch of predictions
             save_batch_masks(pred_all, 'stage3-mask-merge.png')
-        
-        
-        
-        
+                
         for img_i in range(N):
             all_label_mask = pred_all[img_i]
             labels_all, label_count_all = all_label_mask.unique(return_counts=True)
@@ -394,13 +391,6 @@ class GraphVLAD(nn.Module):
 
         self.channel_proj = nn.Linear(self.in_channels, self.proj_in_channels)
         
-        # self.edge_index = []
-        # for i in range(self.NB):
-        #     # Connecting global to local and local to global
-        #     self.edge_index.append([self.NB, i])
-        #     self.edge_index.append([i, self.NB])
-        # self.edge_index = torch.tensor(self.edge_index, dtype=torch.long).t().contiguous()
-        # # self.edge_index = edge_index
         self.edge_index = torch.tensor([
             [0, 1, 2, 3, 4, 5],  # source nodes
             [5, 5, 5, 5, 5, 5]   # target nodes
@@ -423,18 +413,6 @@ class GraphVLAD(nn.Module):
         neighborsFeat = []
       
         _, x_nodes = self.SelectRegions(x, self.base_model, self.fastscnn)
-        #x_nodes.shape
-        #torch.Size([6, 40, 1024, 20, 20])
-        
-        # l1 = self.proj_c(x_nodes[0])
-        # l2 = self.proj_c(x_nodes[1])
-        # l3 = self.proj_c(x_nodes[2])
-        # l4 = self.proj_c(x_nodes[3])
-        # ll = torch.sum(torch.stack([l1, l2, l3, l4]), dim=0)
-        # gg = self.proj_c(x_nodes[5])
-        
-        # lll = torch.cat((gg, ll), dim=1)
-        # x = self.aggregator(lll)
         
         for i in range(self.NB+1):
             vlad_x = self.aggregator(x_nodes[i]) # torch.Size([40, 2048])
