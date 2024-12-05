@@ -1,0 +1,72 @@
+Thu Dec  5 07:36:58 EST 2024
+/home/m.maqboolbhutta/usman_ws/codes/OpenVPRLab
+/home/m.maqboolbhutta/.conda/envs/openvpr/bin/python
+Host: c1106a-s35
+Other nodes: 
+Starting  process(es) on each node...
+
+
+╭───── Training dataset stats ─────╮
+│                                  │
+│  number of cities       23       │
+│  number of places       62514    │
+│  number of images       524701   │
+│                                  │
+╰──────────────────────────────────╯
+╭──── Validation datasets ────╮
+│                             │
+│  msls-val                   │
+│  ├── queries     740        │
+│  └── references  18871      │
+│  pitts30k-val               │
+│  ├── queries     7608       │
+│  └── references  10000      │
+│                             │
+╰─────────────────────────────╯
+╭─────── Data configuration ────────╮
+│                                   │
+│  iterations per epoch    1562     │
+│  train batch size (PxK)  40x4     │
+│  training image size     320x320  │
+│  validation image size   320x320  │
+│                                   │
+╰───────────────────────────────────╯
+
+
+┏━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┓
+┃   ┃ Name          ┃ Type            ┃ Params ┃ Mode  ┃
+┡━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━┩
+│ 0 │ backbone      │ ResNet          │  8.5 M │ train │
+│ 1 │ aggregator    │ MixVPR          │  1.8 M │ train │
+│ 2 │ segmentation  │ FastSCNN        │  1.1 M │ train │
+│ 3 │ loss_function │ VPRLossFunction │      0 │ train │
+│ 4 │ GraphVLAD     │ GraphVLAD       │ 28.0 M │ train │
+└───┴───────────────┴─────────────────┴────────┴───────┘
+Trainable params: 26.5 M                                                        
+Non-trainable params: 1.4 M                                                     
+Total params: 28.0 M                                                            
+Total estimated model params size (MB): 111                                     
+
+
+╭────────────── Recall@k Performance ──────────────╮
+│                                                  │
+│   Dataset         R@1     R@5    R@10    R@15    │
+│  ──────────────────────────────────────────────  │
+│   msls-val       72.03   81.22   85.00   86.62   │
+│   pitts30k-val   89.64   96.54   97.91   98.40   │
+│                                                  │
+╰──────────────────────────────────────────────────╯
+
+
+
+
+╭────────────── Recall@k Performance ──────────────╮
+│                                                  │
+│   Dataset         R@1     R@5    R@10    R@15    │
+│  ──────────────────────────────────────────────  │
+│   msls-val       78.11   85.81   87.70   90.41   │
+│   pitts30k-val   91.23   97.40   98.23   98.62   │
+│                                                  │
+╰──────────────────────────────────────────────────╯
+
+

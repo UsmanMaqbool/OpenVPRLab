@@ -313,7 +313,7 @@ class SelectRegions(nn.Module):
             
             global_feat.append(pre_l2.unsqueeze(0))
             
-            # graph_nodes[img_i] = pre_l2
+            graph_nodes[img_i] = pre_l2
         
             
         

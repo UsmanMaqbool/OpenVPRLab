@@ -246,8 +246,8 @@ class SelectRegions(nn.Module):
         N, C, H, W = x.shape
         
         # Initialize graph nodes tensor
-        # graph_nodes = torch.zeros(N, self.NB, C, H, W).cuda()
-        graph_nodes = torch.zeros(N, C, H, W).cuda()
+        graph_nodes = torch.zeros(N, self.NB + 1, C, H, W).cuda()
+        # graph_nodes = torch.zeros(N, C, H, W).cuda()
 
         rsizet = transforms.Resize((H, W))
         
@@ -267,7 +267,6 @@ class SelectRegions(nn.Module):
         
         
         
-        sub_nodes = []
         
         for img_i in range(N):
             all_label_mask = pred_all[img_i]
@@ -283,7 +282,7 @@ class SelectRegions(nn.Module):
             sorted_labels = labels_all[sorted_indices]
             
             # # Apply the mask after sorting
-            mask_t = sorted_counts >= 5000
+            mask_t = sorted_counts >= 10000
             labels = sorted_labels[mask_t]
 
             # labels = labels_all
@@ -292,8 +291,9 @@ class SelectRegions(nn.Module):
             masks = all_label_mask == labels[:, None, None]
             all_label_mask = rsizet(all_label_mask.unsqueeze(0)).squeeze(0)
 
+            #resetting the subnodes
+            local_rep = []
 
-            
             pre_l2 = x[img_i]
             # if self.visualize:
             #     save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i)
@@ -303,62 +303,52 @@ class SelectRegions(nn.Module):
             regions = masks_to_boxes(masks.to(torch.float32))
             boxes = (regions / 16).to(torch.long)
             
-
             for i, label in enumerate(labels[:min(5, len(labels))]):
                 binary_mask = (all_label_mask == label).float()
                 local_feat = x[img_i] * binary_mask
-                sub_nodes.append(local_feat)
-                pre_l2 = (x[img_i] * binary_mask) + pre_l2
+                # local_rep.append(local_feat)
+                pre_l2 = local_feat + pre_l2
 
-            
-            
-            
-            
-            
-            graph_nodes[img_i] = pre_l2
-        
-            
-        x_nodes = graph_nodes
+            # print(f'Number of regions: {len(labels)}')        
+            ## Saving the local representation
+            for i, _ in enumerate(labels[:min(5, len(labels))]):
+                x_min, y_min, x_max, y_max = boxes[i]
+                if y_min == y_max or x_min == x_max:
+                    continue
+                embed_image_c = rsizet(pre_l2[:, y_min:y_max, x_min:x_max])
+                # if self.visualize:
+                #     embed_file_name = f'embed_{i}.png'  # Customize the naming pattern as needed
+                #     x_min, y_min, x_max, y_max = regions[i].to(torch.long)
+                #     # save_image_with_heatmap(tensor_image=xx[img_i][:, y_min:y_max, x_min:x_max], pre_l2=embed_image_c, img_i=img_i, file_name=embed_file_name)
+                #     save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=embed_image_c, img_i=img_i, file_name=embed_file_name)
+                local_rep.append(embed_image_c.unsqueeze(0))
 
-        #     # sub_nodes.append(embed_image.unsqueeze(0))
-        #     for i, _ in enumerate(labels[:min(5, len(labels))]):
-               
-        #         x_min, y_min, x_max, y_max = boxes[i]
-        #         embed_image_c = rsizet(pre_l2[:, y_min:y_max, x_min:x_max])
-        #         # if self.visualize:
-        #         #     embed_file_name = f'embed_{i}.png'  # Customize the naming pattern as needed
-        #         #     x_min, y_min, x_max, y_max = regions[i].to(torch.long)
-        #         #     # save_image_with_heatmap(tensor_image=xx[img_i][:, y_min:y_max, x_min:x_max], pre_l2=embed_image_c, img_i=img_i, file_name=embed_file_name)
-        #         #     save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=embed_image_c, img_i=img_i, file_name=embed_file_name)
-        #         sub_nodes.append(embed_image_c.unsqueeze(0))
+            ## Adding addtional crops is the crops are less
+            
+            if len(local_rep) < self.NB:
+                total_required = self.NB - len(local_rep)
+                bb_x = [
+                    [int(W / 4), int(H / 4), int(3 * W / 4), int(3 * H / 4)],
+                    [0, 0, int(2 * W / 3), H],
+                    [int(W / 3), 0, W, H],
+                    [0, 0, W, int(2 * H / 3)],
+                    [0, int(H / 3), W, H]
+                ]
+                for i in range(total_required):
+                    x_min, y_min, x_max, y_max = bb_x[i]
+                    embed_image_c = pre_l2[:, y_min:y_max, x_min:x_max]
+                    local_rep.append(rsizet(embed_image_c.unsqueeze(0)))
 
-        #     if len(sub_nodes) < self.NB:
-        #         if self.visualize:
-        #             save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i, file_name='pre_l2.png')
-        #         bb_x = [
-        #             [int(W / 4), int(H / 4), int(3 * W / 4), int(3 * H / 4)],
-        #             [0, 0, int(2 * W / 3), H],
-        #             [int(W / 3), 0, W, H],
-        #             [0, 0, W, int(2 * H / 3)],
-        #             [0, int(H / 3), W, H]                    
-        #         ]
-        #         for i in range(len(bb_x) - len(sub_nodes)):
-        #             x_nodes = pre_l2[:, bb_x[i][1]:bb_x[i][3], bb_x[i][0]:bb_x[i][2]]
-        #             sub_nodes.append(rsizet(x_nodes.unsqueeze(0)))
-        #             if self.visualize:
-        #                 patch_file_name = f'patch_{i}.png'  # Customize the naming pattern as needed
-        #                 save_image_with_heatmap(tensor_image=xx[img_i], pre_l2=pre_l2, img_i=img_i, file_name=patch_file_name, patch_idx=i)
 
-        #     # Stack the cropped patches and store them in graph_nodes
-        #     aa = torch.stack(sub_nodes, 1)
-        #     graph_nodes[img_i] = aa[0]
+            local_rep.append(x[img_i].unsqueeze(0)) # store global representation at 5th index.
 
-        # # Reshape and concatenate graph_nodes with the original tensor x
-        # x_nodes = graph_nodes.view(self.NB, N, C, H, W)
-        # x_nodes = torch.cat((x_nodes, x.unsqueeze(0)))
+            graph_nodes[img_i] = torch.stack(local_rep, 1).squeeze(0)
+
+        # Reshape and concatenate graph_nodes with the original tensor x
+        x_nodes = graph_nodes.view(self.NB+1, N, C, H, W)
         
         # Clean up
-        # del graph_nodes, sub_nodes, pred_all, labels_all, label_count_all, masks, all_label_mask
+        # del graph_nodes, local_rep, pred_all, labels_all, label_count_all, masks, all_label_mask
         
         # x_nodes = graph_nodes
         
@@ -402,7 +392,7 @@ class GraphVLAD(nn.Module):
         self.proj_c = torch.nn.Conv2d(self.proj_in_channels, self.proj_out_channels, kernel_size=3, padding=1)
         self.proj_l = torch.nn.Conv2d(self.proj_in_channels, 128, kernel_size=3, padding=1)
 
-        # self.channel_proj = nn.Linear(self.in_channels, self.proj_channels)
+        self.channel_proj = nn.Linear(self.in_channels, self.proj_in_channels)
         
         # self.edge_index = []
         # for i in range(self.NB):
@@ -426,14 +416,15 @@ class GraphVLAD(nn.Module):
         self.aggregator._init_params()
 
     def forward(self, x):
-        # xx = self.base_model(x)
-        # xx = self.aggregator(xx)
+        # xx1 = self.base_model(x)
+        # xx2 = self.aggregator(xx1)
 
         node_features_list = []
         neighborsFeat = []
       
         _, x_nodes = self.SelectRegions(x, self.base_model, self.fastscnn)
-        x = self.aggregator(x_nodes)
+        #x_nodes.shape
+        #torch.Size([6, 40, 1024, 20, 20])
         
         # l1 = self.proj_c(x_nodes[0])
         # l2 = self.proj_c(x_nodes[1])
@@ -445,92 +436,32 @@ class GraphVLAD(nn.Module):
         # lll = torch.cat((gg, ll), dim=1)
         # x = self.aggregator(lll)
         
-        # for i in range(self.NB+1):
-        #     xx = self.proj_c(x_nodes[i])
-        #     # vlad_x = self.aggregator(x_nodes[i])
-        #     # vlad_x = F.normalize(vlad_x, p=2, dim=2)
-        #     # vlad_x = vlad_x.view(x_size, -1)
-        #     # vlad_x = F.normalize(vlad_x, p=2, dim=1)
-        #     neighborsFeat.append(vlad_x)
-        # # node_features_list.append(neighborsFeat[self.NB])
-        # # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))        
-        # zz = torch.concat(neighborsFeat[0:self.NB+1])
-        # feat_size = vlad_x.shape[0]
-        # data = Data(x=zz, edge_index=self.edge_index)
-        # data = self.GATModel(data)
-        
-        # data = data[-feat_size:]
-        # ori = zz[-feat_size:] 
-        
-        # data2 = self.channel_proj(data)
-        # ori_2 = self.channel_proj(ori)
-        # data = torch.cat((data2,ori_2), dim=1) 
-        # data = data + ori
-        # data = F.normalize(data, p=2, dim=1)
-        #     neighborsFeat.append(vlad_x.unsqueeze(0))
+        for i in range(self.NB+1):
+            vlad_x = self.aggregator(x_nodes[i]) # torch.Size([40, 2048])
+            neighborsFeat.append(vlad_x)
         # node_features_list.append(neighborsFeat[self.NB])
-        # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))
-
-        # gvlad = self.applyGNN(node_features_list)
+        # node_features_list.append(torch.concat(neighborsFeat[0:self.NB],0))        
+        nodes = torch.stack(neighborsFeat, dim=0)
+        feat_size = vlad_x.shape[0] # 40
+        nodes = nodes.view(feat_size, self.NB+1,-1)
+        for i in range(nodes.shape[0]):
+            zz = nodes[i]
+            
+            ori = zz[5] 
         
-        # gvlad = F.normalize(gvlad, p=2, dim=1)
-        # gvlad = F.relu(gvlad)
-
-
-        # gvlad = torch.add(gvlad, vlad_x)
-        # gvlad = F.normalize(gvlad, p=2, dim=1)
-
-        # gvlad = gvlad.view(-1, vlad_x.shape[1])
+            data = Data(x=zz, edge_index=self.edge_index)
+            data = self.GATModel(data)
+            data = data[5]
         
-        # Clear node_features_list to free up memory
-        # del neighborsFeat, node_features_list
-        # x = self.base_model(x)
-        # x = self.aggregator(x)
         
+            data2 = self.channel_proj(data)
+            ori_2 = self.channel_proj(ori)
+            data = torch.cat((data2,ori_2), dim=0) 
+            data = data + ori
+            data = F.normalize(data, p=2, dim=0)
+            node_features_list.append(data)
+        
+        x = torch.stack(node_features_list, dim=0)
         return x
     
     
-    
-#     import torch
-# import torch.nn.functional as F
-# from torch_geometric.nn import GATConv
-# from torch_geometric.data import Data
-
-# # Assuming global feature and local features are as follows
-# global_feature = torch.randn(1, 2048)  # Global feature of shape [1, 2048]
-# local_features = torch.randn(5, 2048)  # Local features of shape [5, 2048]
-
-# # Combine global and local features into a single node feature matrix
-# x = torch.cat([global_feature, local_features], dim=0)  # Shape will be [6, 2048]
-
-# # Define edges, 0 is the global feature, 1-5 are the local features
-# edge_index = torch.tensor([
-#     [0, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5],  # source nodes
-#     [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0]   # target nodes
-# ], dtype=torch.long)
-
-# # Create the Graph Data object
-# data = Data(x=x, edge_index=edge_index)
-
-# # Define the GAT model
-# class GAT(torch.nn.Module):
-#     def __init__(self, in_channels, out_channels, heads=1):
-#         super(GAT, self).__init__()
-#         self.gat_conv = GATConv(in_channels, out_channels, heads=heads, concat=False)
-
-#     def forward(self, data):
-#         x, edge_index = data.x, data.edge_index
-#         x = self.gat_conv(x, edge_index)
-#         return x
-
-# # Initialize and apply the model
-# model = GAT(in_channels=2048, out_channels=2048, heads=1)
-# model.eval()  # Set the model to evaluation mode
-
-# with torch.no_grad():  # No need to compute gradients for inference
-#     updated_features = model(data)
-
-# # Extract the updated global feature
-# updated_global_feature = updated_features[0]
-# print(updated_global_feature.shape)  # Should output torch.Size([2048])
-# print(updated_global_feature)

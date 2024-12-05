@@ -1,0 +1,25 @@
+Thu Dec  5 10:25:12 EST 2024
+/home/m.maqboolbhutta/usman_ws/codes/OpenVPRLab
+Host: c0801a-s35
+Other nodes: 
+Thu Dec  5 10:25:12 EST 2024
+/home/m.maqboolbhutta/usman_ws/codes/OpenVPRLab
+*
+* Visual Studio Code Server
+*
+* By using the software, you agree to
+* the Visual Studio Code Server License Terms (https://aka.ms/vscode-server-license) and
+* the Microsoft Privacy Statement (https://privacy.microsoft.com/en-US/privacystatement).
+*
+[2024-12-05 10:25:15] info Using Github for authentication, run `code tunnel user login --provider <provider>` option to change this.
+To grant access to the server, please log into https://github.com/login/device and use code EC85-85CC
+
+Open this link in your browser https://vscode.dev/tunnel/yes/blue/hmedeiros/m.maqboolbhutta/codes/OpenVPRLab
+
+[2024-12-05 10:26:08] info [tunnels::connections::relay_tunnel_host] Opened new client on channel 2
+[2024-12-05 10:26:08] info [russh::server] wrote id
+[2024-12-05 10:26:08] info [russh::server] read other id
+[2024-12-05 10:26:08] info [russh::server] session is running
+[2024-12-05 10:26:09] info [rpc.0] Checking /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/log.txt and /home/m.maqboolbhutta/.vscode/cli/servers/Stable-f1a4fb101478ce6ec82fe9627c43efbf9e98c813/pid.txt for a running server...
+[2024-12-05 10:26:09] info [rpc.0] Starting server...
+[2024-12-05 10:26:09] info [rpc.0] Server started
